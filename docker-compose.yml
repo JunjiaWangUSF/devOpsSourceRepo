@@ -4,12 +4,20 @@ services:
     build: ./frontend
     ports:
       - "3000:3000"
+
   backend:
     build: ./backend
     ports:
       - "8000:8000"
+    environment:
+      DB_HOST: mysql # Name of the MySQL service in docker-compose
+      DB_USER: root # As defined in the MySQL service configuration
+      DB_PASSWORD: password # As defined in the MySQL service configuration
+      DB_DATABASE: weightTracker # As defined in the MySQL service configuration
+      DB_PORT: 3306 # Standard MySQL port
     depends_on:
       - mysql
+
   mysql:
     image: mysql:5.7
     environment:
