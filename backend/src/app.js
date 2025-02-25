@@ -1,6 +1,6 @@
-const express = require("express");
-const mysql = require("mysql2");
-const cors = require("cors");
+import express from "express";
+import mysql from "mysql2";
+import cors from "cors";
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -50,6 +50,22 @@ app.get("/weights/:username", (req, res) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+app.get("/weights/test", (req, res) => {
+  const sql = `SELECT * FROM weights`;
+  pool.query(sql, (err, results) => {
+    if (err) {
+      res.status(500).send("Error retrieving weights");
+      return;
+    }
+    res.json(results);
+  });
 });
+
+// Check if the module is being required elsewhere or run directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
+}
+
+export default app;
