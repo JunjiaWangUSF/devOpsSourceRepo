@@ -11,6 +11,7 @@ jobs:
       issues: write # Allows creating issues
       pull-requests: write # If using pull requests
       repository-projects: write
+
     steps:
       - uses: actions/checkout@v4
         with:
