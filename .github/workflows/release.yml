@@ -6,6 +6,10 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Allows pushing to the repository
+      issues: write # Allows creating issues
+      pull-requests: write # If using pull requests
     steps:
       - uses: actions/checkout@v4
         with:
