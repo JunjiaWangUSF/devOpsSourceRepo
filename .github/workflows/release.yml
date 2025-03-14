@@ -54,26 +54,9 @@ jobs:
           # Set environment variable
           echo "RC_VERSION=$RC_VERSION" >> $GITHUB_ENV
 
-      - name: Trigger repository dispatch
-        uses: actions/github-script@v7
-        env:
-          RC_VERSION: ${{ env.RC_VERSION }}
-          INFRA_TOKEN: ${{ secrets.REPO_DISPATCH_TOKEN }}
-        with:
-          script: |
-            try {
-              await github.rest.repos.createDispatchEvent({
-                owner: 'JunjiaWangUSF',
-                repo: 'devOpsInfraRepo',
-                event_type: 'promote-rc',
-                client_payload: {
-                  rc_version: process.env.RC_VERSION,
-                  image_tag: 'latest'
-                },
-                headers: { authorization: `token ${process.env.INFRA_TOKEN}` }
-              });
-              console.log('Dispatch event triggered successfully');
-            } catch (error) {
-              console.error('Error triggering dispatch:', error);
-              throw error;  // Fail the step
-            }
+      - name: Trigger with curl
+        run: |
+          curl -X POST "https://api.github.com/repos/JunjiaWangUSF/devOpsInfraRepo/dispatches" \
+            -H "Authorization: token ${{ secrets.REPO_DISPATCH_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d '{"event_type":"promote-rc", "client_payload":{"rc_version":"${{ env.RC_VERSION }}"}}'
