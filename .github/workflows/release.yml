@@ -7,9 +7,9 @@ jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Allows pushing to the repository
-      issues: write # Allows creating issues
-      pull-requests: write # If using pull requests
+      contents: write
+      issues: write
+      pull-requests: write
       repository-projects: write
 
     steps:
@@ -30,33 +30,35 @@ jobs:
 
       - name: Set RC_VERSION
         run: |
-          # Check if the file exists
           if [[ ! -f .rc_version ]]; then
             echo "❌ Error: .rc_version file not found"
             exit 1
           fi
-
-          # Extract the LAST occurrence of RC_VERSION
           RC_VERSION=$(grep 'RC_VERSION=' .rc_version | tail -1 | cut -d= -f2 | tr -d '[:space:]')
-
-          # Validate format
           if [[ ! "$RC_VERSION" =~ ^rc[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "❌ Invalid RC_VERSION format: $RC_VERSION"
             exit 1
           fi
-
-          # Optional: Warn about duplicates but proceed
-          RC_LINES=$(grep -c 'RC_VERSION=' .rc_version)
-          if [[ "$RC_LINES" -gt 1 ]]; then
-            echo "⚠️ Warning: Multiple RC_VERSION entries found. Using the LAST one: $RC_VERSION"
-          fi
-
-          # Set environment variable
           echo "RC_VERSION=$RC_VERSION" >> $GITHUB_ENV
 
-      - name: Trigger with curl
+      - name: Trigger Infra Repo Dispatch
         run: |
-          curl -X POST "https://api.github.com/repos/JunjiaWangUSF/devOpsInfraRepo/dispatches" \
+          # 安装 jq 用于生成 JSON
+          sudo apt-get install -y jq
+
+          # 生成动态 JSON 载荷
+          JSON_PAYLOAD=$(jq -n \
+            --arg event_type "promote-rc" \
+            --arg rc_version "${{ env.RC_VERSION }}" \
+            '{event_type: $event_type, client_payload: {rc_version: $rc_version}}')
+
+          # 调试输出（不暴露敏感信息）
+          echo "Sending JSON payload:"
+          echo "$JSON_PAYLOAD"
+
+          # 发送请求
+          curl -v -X POST "https://api.github.com/repos/JunjiaWangUSF/devOpsInfraRepo/dispatches" \
             -H "Authorization: token ${{ secrets.REPO_DISPATCH_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
-            -d '{"event_type":"promote-rc", "client_payload":{"rc_version":"${{ env.RC_VERSION }}"}}'
+            -H "Content-Type: application/json" \
+            -d "$JSON_PAYLOAD"
