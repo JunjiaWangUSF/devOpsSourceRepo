@@ -26,11 +26,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
 
-      - name: Get RC Version
-        id: rc_version
+      - name: Set RC_VERSION
         run: |
-          RC_VERSION=$(grep -oP 'RC_VERSION=\K.*' .rc_version)
-          echo "RC_VERSION=${RC_VERSION}" >> $GITHUB_ENV
+          # Extract and sanitize the version
+          RC_VERSION=$(grep 'RC_VERSION=' .rc_version | cut -d= -f2 | tr -d '[:space:]')
+          # Validate format (optional)
+          if [[ ! "$RC_VERSION" =~ ^rc[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid RC_VERSION format: $RC_VERSION"
+            exit 1
+          fi
+          # Set environment variable
+          echo "RC_VERSION=$RC_VERSION" >> $GITHUB_ENV
 
       - name: Trigger Infra Promotion
         uses: actions/github-script@v7
