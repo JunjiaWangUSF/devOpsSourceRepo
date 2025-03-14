@@ -28,13 +28,19 @@ jobs:
 
       - name: Set RC_VERSION
         run: |
-          # Extract and sanitize the version
-          RC_VERSION=$(grep 'RC_VERSION=' .rc_version | cut -d= -f2 | tr -d '[:space:]')
-          # Validate format (optional)
-          if [[ ! "$RC_VERSION" =~ ^rc[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "❌ Invalid RC_VERSION format: $RC_VERSION"
-            exit 1
+          RC_LINES=$(grep -c 'RC_VERSION=' .rc_version)
+          if [[ "$RC_LINES" -gt 1 ]]; then
+          echo "❌ Multiple RC_VERSION entries in .rc_version"
+          exit 1
           fi
+          RC_VERSION=$(grep 'RC_VERSION=' .rc_version | tail -1 | cut -d= -f2 | tr -d '[:space:]')
+
+          # Validate format
+          if [[ ! "$RC_VERSION" =~ ^rc[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "❌ Invalid RC_VERSION format: $RC_VERSION"
+          exit 1
+          fi
+
           # Set environment variable
           echo "RC_VERSION=$RC_VERSION" >> $GITHUB_ENV
 
