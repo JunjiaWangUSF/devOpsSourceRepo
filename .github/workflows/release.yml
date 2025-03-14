@@ -45,5 +45,6 @@ jobs:
               client_payload: {
                 rc_version: process.env.RC_VERSION,
                 image_tag: 'latest'
-              }
+              },
+              headers: { authorization: `token ${TOKEN}` }  # Inject PAT
             })
