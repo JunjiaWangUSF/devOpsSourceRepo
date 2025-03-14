@@ -6,7 +6,8 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "echo 'RC_VERSION=rc${nextRelease.version}' >> .rc_version"
+        "prepareCmd": "echo 'RC_VERSION=rc${nextRelease.version}' >> .rc_version && git tag v${nextRelease.version}-rc",
+        "publishCmd": "git push origin v${nextRelease.version}-rc"
       }
     ],
     [

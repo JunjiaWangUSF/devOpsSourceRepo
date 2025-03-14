@@ -1,7 +1,8 @@
 name: Release
 on:
   push:
-    branches: [main]
+    branches:
+      - rc
 
 jobs:
   release:
@@ -50,7 +51,7 @@ jobs:
 
       - name: Trigger Infra Repo Dispatch
         env:
-          INFRA_TOKEN: ${{ secrets.REPO_DISPATCH_TOKEN }} # 使用正确的secret名称
+          INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
         run: |
           # 安装必要工具
           sudo apt-get update && sudo apt-get install -y jq
