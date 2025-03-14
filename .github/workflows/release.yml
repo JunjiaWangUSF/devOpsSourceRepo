@@ -11,6 +11,7 @@ jobs:
       issues: write
       pull-requests: write
       repository-projects: write
+      actions: write # 新增必要权限
 
     steps:
       - uses: actions/checkout@v4
@@ -34,31 +35,44 @@ jobs:
             echo "❌ Error: .rc_version file not found"
             exit 1
           fi
-          RC_VERSION=$(grep 'RC_VERSION=' .rc_version | tail -1 | cut -d= -f2 | tr -d '[:space:]')
-          if [[ ! "$RC_VERSION" =~ ^rc[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+
+          # 使用更健壮的版本号提取方式
+          RC_VERSION=$(grep 'RC_VERSION=' .rc_version | tail -1 | awk -F= '{print $2}' | tr -d '[:space:]')
+
+          # 扩展正则表达式支持rc版本号
+          if [[ ! "$RC_VERSION" =~ ^rc[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.?[0-9]*)?$ ]]; then
             echo "❌ Invalid RC_VERSION format: $RC_VERSION"
             exit 1
           fi
+
+          echo "Validated RC_VERSION: $RC_VERSION"
           echo "RC_VERSION=$RC_VERSION" >> $GITHUB_ENV
 
       - name: Trigger Infra Repo Dispatch
+        env:
+          INFRA_TOKEN: ${{ secrets.REPO_DISPATCH_TOKEN }} # 使用正确的secret名称
         run: |
-          # 安装 jq 用于生成 JSON
-          sudo apt-get install -y jq
+          # 安装必要工具
+          sudo apt-get update && sudo apt-get install -y jq
 
-          # 生成动态 JSON 载荷
+          # 直接从环境变量获取（避免YAML转义问题）
+          RC_VERSION=$(grep 'RC_VERSION=' .rc_version | tail -1 | awk -F= '{print $2}' | tr -d '[:space:]')
+
+          # 生成更安全的JSON payload
           JSON_PAYLOAD=$(jq -n \
             --arg event_type "promote-rc" \
-            --arg rc_version "${{ env.RC_VERSION }}" \
+            --arg rc_version "$RC_VERSION" \
             '{event_type: $event_type, client_payload: {rc_version: $rc_version}}')
 
-          # 调试输出（不暴露敏感信息）
-          echo "Sending JSON payload:"
-          echo "$JSON_PAYLOAD"
+          echo "Generated payload:"
+          jq . <<< "$JSON_PAYLOAD"  # 验证JSON格式
 
-          # 发送请求
-          curl -v -X POST "https://api.github.com/repos/JunjiaWangUSF/devOpsInfraRepo/dispatches" \
-            -H "Authorization: token ${{ secrets.REPO_DISPATCH_TOKEN }}" \
+          # 添加调试信息（不暴露敏感信息）
+          echo "Triggering dispatch event to devOpsInfraRepo..."
+
+          curl -sS -X POST "https://api.github.com/repos/JunjiaWangUSF/devOpsInfraRepo/dispatches" \
+            -H "Authorization: token $INFRA_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
             -H "Content-Type: application/json" \
-            -d "$JSON_PAYLOAD"
+            -d "$JSON_PAYLOAD" \
+            -w "\nHTTP Status: %{http_code}\n"

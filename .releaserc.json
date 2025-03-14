@@ -1,25 +1,32 @@
 {
-  "branches": ["main", { "name": "rc", "channel": "rc", "prerelease": true }],
+  "branches": [
+    "main",
+    {
+      "name": "rc",
+      "prerelease": {
+        "name": "rc",
+        "type": "patch",
+        "channel": "rc"
+      }
+    }
+  ],
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "echo 'RC_VERSION=rc${nextRelease.version}' >> .rc_version"
+        "prepareCmd": "echo 'RC_VERSION=rc${nextRelease.version}' > .rc_version"
       }
     ],
     [
       "@semantic-release/git",
       {
         "assets": [".rc_version"],
-        "message": "chore(release): ${nextRelease.version} [skip ci]"
+        "message": "chore(release): ${nextRelease.gitTag} [skip ci]"
       }
     ],
     "@semantic-release/github"
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/JunjiaWangUSF/devOpsSourceRepo.git"
-  }
+  "tagFormat": "${version}"
 }
