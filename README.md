@@ -286,13 +286,17 @@ The `promote.yml` workflow is triggered by a repository dispatch event from the 
 3. **Retag ECR Images**:
 
    - The latest images from the **frontend** and **backend** ECR repositories are retagged with the semantic version.
-   - Example:
-     - Original tag: `latest`
-     - New tag: `1.0.1-rc.1`
+   - Example: - Original tag: `latest` - New tag: `1-0-1-rc.1`
+
+![alt text](image-8.png)
 
 4. **Deploy to EC2 with Nginx**:
    - The retagged images are deployed to an EC2 instance, run docker images and subsitute server name with our subdomain in Nginx configuraruib file. Will have more deatils on EC2 set up section.
    - Nginx is set up to handle the custom subdomain (e.g., `1-0-1-rc-1.domain.com`)
+
+![alt text](image-9.png)
+
+Workflow Details:
 
 ```
 name: Promote RC
@@ -595,5 +599,5 @@ server {
 ### **Challenges**
 
 1. DNS-01 test
-2. Ngix to hold subdomain
+2. Nginx to hold subdomain
 3. Understand Semantic version and release candiate tag.
